@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Order App</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; margin: 0; background-color: #f0f2f5; color: #333; padding-bottom: 50px; }
+        .sticky-header { position: sticky; top: 0; background: #2c3e50; color: white; padding: 15px 20px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .analyzer-container { display: flex; gap: 15px; align-items: flex-start; }
+        textarea { flex-grow: 1; height: 100px; padding: 10px; border-radius: 8px; border: none; font-size: 14px; font-family: 'Sarabun', sans-serif; }
+        .btn-analyze { background: #27ae60; color: white; border: none; padding: 0 25px; height: 100px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s; }
+        .btn-analyze:hover { background: #219150; transform: scale(1.02); }
+        .content { padding: 20px; }
+        .line-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; }
+        h2 { margin-top: 0; color: #2c3e50; border-left: 6px solid #27ae60; padding-left: 15px; }
+        table { border-collapse: collapse; width: 100%; min-width: 1500px; }
+        th, td { border: 1px solid #dfe6e9; text-align: center; padding: 5px; font-size: 13px; }
+        th { background-color: #f8f9fa; vertical-align: middle; height: 120px; }
+        .v-text { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; margin: 0 auto; }
+        .color-col { width: 80px; font-weight: bold; background: #fcfcfc; }
+        .branch-col { text-align: left; padding-left: 10px; font-weight: bold; background: #fdfdfd; width: 200px; color: #2980b9; }
+        input { width: 90%; border: 1px solid transparent; background: transparent; text-align: center; font-size: 14px; padding: 5px 0; }
+        input:focus { outline: none; background: #fff; border-bottom: 2px solid #27ae60; }
+        .row-active { background-color: #e8f5e9 !important; outline: 2px solid #27ae60; }
+        .pulse-cell { animation: pulse 1s; font-weight: bold; color: #d35400; }
+        @keyframes pulse { 0% { background: #ffeaa7; } 100% { background: transparent; } }
+    </style>
+</head>
+<body>
+
+<div class="sticky-header">
+    <div style="margin-bottom: 10px; font-size: 18px; font-weight: bold;">📊 ระบบลงข้อมูลผลไม้ V2 (PWA)</div>
+    <div class="analyzer-container">
+        <textarea id="rawText" placeholder="วางข้อความจาก LINE ที่นี่..."></textarea>
+        <button class="btn-analyze" onclick="analyzeData()">วิเคราะห์ข้อมูล</button>
+    </div>
+    <div id="status" style="margin-top: 10px; font-size: 14px; color: #55efc4; font-weight: bold;"></div>
+</div>
+
+<div class="content" id="table-display"></div>
+
+<script>
+    const BRANCHES_BY_LINE = {
+        "สายที่ 1": [{c: "ส้ม", n: "เซ็นทรัล พระราม9"}, {c: "เขียว", n: "รพ.กรุงเทพ"}, {c: "ดำ", n: "มาเข 55"}, {c: "น้ำเงิน", n: "เกตเวย์ เอกมัย"}, {c: "แดง", n: "เอ็มโพเรียม"}, {c: "เหลือง", n: "เอ็มควอเทียร์"}, {c: "ดำเขียว", n: "ท๊อป เอ็มไพน์"}, {c: "เขียวเหลือง", n: "BTS นนทรี"}, {c: "ฟ้า", n: "Park Q"}, {c: "ดำเหลือง", n: "One Bankok"}, {c: "ชมพู", n: "เทอมินอล 21"}, {c: "น้ำเงินแดง", n: "แพลตดินัม"}, {c: "ฟ้าส้ม", n: "Big C รัชดา"}],
+        "สายที่ 2": [{c: "ฟ้า", n: "แฟชั่น ไอซ์แลนด์"}, {c: "ส้ม", n: "เซ็นทรัล อีสวิล"}, {c: "เขียวฟ้า", n: "เดอะคริสตัล"}, {c: "ชมพู", n: "เดอะมอล บางกะปิ"}, {c: "ขาว", n: "โรบินสัน ลาดกระบัง"}, {c: "แดง", n: "สนามบินจักรยาน"}, {c: "แดงฟ้า", n: "เซ็นทรัลวิลล์ VCQ"}, {c: "ดำ", n: "มาเก็ตวิลเลจ"}, {c: "น้ำเงิน", n: "เมกาบางนา"}, {c: "เหลือง", n: "เซ็นทรัล บางนา"}, {c: "น้ำเงินดำ", n: "โลตัสสุขุมวิท"}, {c: "เขียวเหลือง", n: "เข้นจูรี"}, {c: "ส.ล", n: "True Park"}, {c: "เขียว", n: "ซีคอนสแควร์"}],
+        "สายที่ 3": [{c: "ฟ้า", n: "เซ็นทรัล ลาดพร้าว"}, {c: "ข.ล", n: "ยูเนียนมอล"}, {c: "แดง", n: "เมเจอร์ รัชโยธิน"}, {c: "เหลือง", n: "เซ็นทรัล ปาร์ค"}, {c: "น้ำเงิน", n: "เซ็นทรัล เวสต์"}, {c: "ส้ม", n: "ท๊อป ออลซีซัน"}, {c: "คำฟ้า", n: "แอม ไชน่า"}, {c: "ส.ข", n: "สีลม คอมเพล็กซ์"}, {c: "ดำส้ม", n: "ดีก ICS"}, {c: "เขียว", n: "เซ็นทรัลบางรัก"}, {c: "ชมพู", n: "T21RM3"}, {c: "ขาว", n: "มาเกิ็ดเพลส"}],
+        "สายที่ 4": [{c: "ขาวเขียว", n: "เซ็นทรัล รามอินทรา"}, {c: "ส้มเขียว", n: "เพลินนารีมอล"}, {c: "น้ำเงิน", n: "ทรานซ์ แจ้งวัฒนะ"}, {c: "ส้ม", n: "เซ็นทรัล แจ้งวัฒนะ"}, {c: "ชมพูดำ", n: "คอสโม"}, {c: "ขาว", n: "โรบินสันศรีสมาน"}, {c: "ชมพู", n: "โรบินสัน ราชพฤกษ์"}, {c: "ดำ", n: "โลตัส ราชพฤกษ์"}, {c: "ฟ้า", n: "เซ็นทรัล เวสต์เกต"}, {c: "เหลือง", n: "เซ็นทรัล เวสต์วิล"}, {c: "เขียว", n: "เซ็นทรัล ปิ่นเกล้า"}, {c: "คำแดง", n: "ลาวิลลา"}, {c: "แดง", n: "เดอะมอล งามวงศ์"}]
+    };
+    const FRUITS = ["กล้วย", "แตงโม", "ส้ม", "แอปเปิ้ล", "สับปะรด", "แครอท", "ขิง", "ใบมิ้น", "แตงกวา", "เซอรารี่", "เลม่อน", "kale", "บีทรูท"];
+
+    // สร้างตาราง
+    const display = document.getElementById('table-display');
+    Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
+        let html = `<div class="line-card"><h2>${line}</h2><table><thead><tr><th>#</th><th>สี</th><th>สาขา</th>`;
+        FRUITS.forEach((f, i) => html += `<th><div class="v-text">${i+1}.${f}</div></th>`);
+        html += `<th>หมายเหตุ</th></tr></thead><tbody>`;
+        BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
+            html += `<tr id="row-${lIdx}-${bIdx}"><td>${bIdx + 1}</td><td class="color-col">${item.c}</td><td class="branch-col">${item.n}</td>
+                ${FRUITS.map((_, fIdx) => `<td><input type="text" id="input-${lIdx}-${bIdx}-${fIdx}" oninput="saveData()"></td>`).join('')}
+                <td><input type="text" id="note-${lIdx}-${bIdx}" oninput="saveData()"></td></tr>`;
+        });
+        html += `</tbody></table></div>`;
+        display.innerHTML += html;
+    });
+
+    // ฟังก์ชันวิเคราะห์ข้อมูลจาก LINE
+    function analyzeData() {
+        const text = document.getElementById('rawText').value;
+        if (!text.trim()) return;
+        let targetL = -1, targetB = -1, finalName = "";
+        Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
+            BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
+                if (text.includes(item.n)) { targetL = lIdx; targetB = bIdx; finalName = item.n; }
+            });
+        });
+        if (targetL === -1) { alert("❌ ไม่พบชื่อสาขา!"); return; }
+
+        document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
+        const row = document.getElementById(`row-${targetL}-${targetB}`);
+        row.classList.add('row-active');
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        FRUITS.forEach((_, fIdx) => {
+            const regex = new RegExp(`${fIdx + 1}\\.\\s*.*?=\\s*([^\\n\\r]+)`, "i");
+            const match = text.match(regex);
+            const input = document.getElementById(`input-${targetL}-${targetB}-${fIdx}`);
+            if (match) {
+                input.value = match[1].trim();
+                input.classList.add('pulse-cell');
+                setTimeout(() => input.classList.remove('pulse-cell'), 1000);
+            }
+        });
+        saveData(); // บันทึกหลังวิเคราะห์
+        document.getElementById('status').innerText = `✅ บันทึก: ${finalName} แล้ว`;
+    }
+
+    // ระบบบันทึกข้อมูลลงเครื่อง (LocalStorage)
+    function saveData() {
+        const allData = {};
+        document.querySelectorAll('input').forEach(input => {
+            if (input.value) allData[input.id] = input.value;
+        });
+        localStorage.setItem('fruitAppData', JSON.stringify(allData));
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('fruitAppData');
+        if (saved) {
+            const data = JSON.parse(saved);
+            for (let id in data) {
+                const el = document.getElementById(id);
+                if (el) el.value = data[id];
+            }
+        }
+    }
+    window.onload = loadData;
+
+    // ลงทะเบียน Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+</script>
+</body>
+</html>
