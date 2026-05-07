@@ -3,41 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fruit Order App</title>
+    <title>Fruit Order App - Reset Function</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c3e50">
     <link rel="apple-touch-icon" href="icon-192.png">
     
     <style>
         body { font-family: 'Sarabun', sans-serif; margin: 0; background-color: #f0f2f5; color: #333; padding-bottom: 50px; }
+        
         .sticky-header { position: sticky; top: 0; background: #2c3e50; color: white; padding: 15px 20px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .analyzer-container { display: flex; gap: 15px; align-items: flex-start; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        
+        .analyzer-container { display: flex; gap: 10px; align-items: stretch; }
         textarea { flex-grow: 1; height: 100px; padding: 10px; border-radius: 8px; border: none; font-size: 14px; font-family: 'Sarabun', sans-serif; }
-        .btn-analyze { background: #27ae60; color: white; border: none; padding: 0 25px; height: 100px; border-radius: 8px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s; }
-        .btn-analyze:hover { background: #219150; transform: scale(1.02); }
+        
+        .button-group { display: flex; flex-direction: column; gap: 8px; }
+        .action-buttons { display: flex; gap: 5px; }
+
+        .btn-analyze { background: #27ae60; color: white; border: none; width: 100px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-paste { background: #e67e22; color: white; border: none; width: 100px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; padding: 5px; }
+        .btn-print { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        .btn-reset { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        
+        .btn-reset:hover { background: #c0392b; }
+        .btn-print:hover { background: #2980b9; }
+
         .content { padding: 20px; }
         .line-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; }
+        
         h2 { margin-top: 0; color: #2c3e50; border-left: 6px solid #27ae60; padding-left: 15px; }
-        table { border-collapse: collapse; width: 100%; min-width: 1500px; }
+        table { border-collapse: collapse; width: 100%; min-width: 1200px; }
         th, td { border: 1px solid #dfe6e9; text-align: center; padding: 5px; font-size: 13px; }
         th { background-color: #f8f9fa; vertical-align: middle; height: 120px; }
         .v-text { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; margin: 0 auto; }
-        .color-col { width: 80px; font-weight: bold; background: #fcfcfc; }
-        .branch-col { text-align: left; padding-left: 10px; font-weight: bold; background: #fdfdfd; width: 200px; color: #2980b9; }
+        
+        .branch-col { text-align: left; padding-left: 10px; font-weight: bold; background: #fdfdfd; width: 180px; color: #2980b9; }
         input { width: 90%; border: 1px solid transparent; background: transparent; text-align: center; font-size: 14px; padding: 5px 0; }
         input:focus { outline: none; background: #fff; border-bottom: 2px solid #27ae60; }
         .row-active { background-color: #e8f5e9 !important; outline: 2px solid #27ae60; }
-        .pulse-cell { animation: pulse 1s; font-weight: bold; color: #d35400; }
-        @keyframes pulse { 0% { background: #ffeaa7; } 100% { background: transparent; } }
+
+        @media print {
+            .sticky-header, .btn-reset { display: none !important; }
+            .line-card { page-break-after: always; box-shadow: none; border: 1px solid #eee; }
+            @page { size: landscape; }
+        }
     </style>
 </head>
 <body>
 
 <div class="sticky-header">
-    <div style="margin-bottom: 10px; font-size: 18px; font-weight: bold;">📊 ระบบลงข้อมูลผลไม้ V2 (PWA)</div>
+    <div class="header-top">
+        <div style="font-size: 18px; font-weight: bold;">📊 ระบบลงข้อมูลผลไม้ V2</div>
+        <div class="action-buttons">
+            <button class="btn-reset" onclick="resetAllData()">🗑️ ล้างข้อมูลทั้งหมด</button>
+            <button class="btn-print" onclick="window.print()">🖨️ พิมพ์</button>
+        </div>
+    </div>
     <div class="analyzer-container">
         <textarea id="rawText" placeholder="วางข้อความจาก LINE ที่นี่..."></textarea>
-        <button class="btn-analyze" onclick="analyzeData()">วิเคราะห์ข้อมูล</button>
+        <div class="button-group">
+            <button class="btn-paste" onclick="pasteData()">📋 วาง</button>
+            <button class="btn-analyze" onclick="analyzeData()">วิเคราะห์</button>
+        </div>
     </div>
     <div id="status" style="margin-top: 10px; font-size: 14px; color: #55efc4; font-weight: bold;"></div>
 </div>
@@ -53,14 +80,14 @@
     };
     const FRUITS = ["กล้วย", "แตงโม", "ส้ม", "แอปเปิ้ล", "สับปะรด", "แครอท", "ขิง", "ใบมิ้น", "แตงกวา", "เซอรารี่", "เลม่อน", "kale", "บีทรูท"];
 
-    // สร้างตาราง
+    // วาดตาราง
     const display = document.getElementById('table-display');
     Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
         let html = `<div class="line-card"><h2>${line}</h2><table><thead><tr><th>#</th><th>สี</th><th>สาขา</th>`;
         FRUITS.forEach((f, i) => html += `<th><div class="v-text">${i+1}.${f}</div></th>`);
         html += `<th>หมายเหตุ</th></tr></thead><tbody>`;
         BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
-            html += `<tr id="row-${lIdx}-${bIdx}"><td>${bIdx + 1}</td><td class="color-col">${item.c}</td><td class="branch-col">${item.n}</td>
+            html += `<tr id="row-${lIdx}-${bIdx}"><td>${bIdx + 1}</td><td>${item.c}</td><td class="branch-col">${item.n}</td>
                 ${FRUITS.map((_, fIdx) => `<td><input type="text" id="input-${lIdx}-${bIdx}-${fIdx}" oninput="saveData()"></td>`).join('')}
                 <td><input type="text" id="note-${lIdx}-${bIdx}" oninput="saveData()"></td></tr>`;
         });
@@ -68,38 +95,56 @@
         display.innerHTML += html;
     });
 
-    // ฟังก์ชันวิเคราะห์ข้อมูลจาก LINE
+    // ฟังก์ชัน Reset ข้อมูลทั้งหมด
+    function resetAllData() {
+        const confirmReset = confirm("⚠️ คุณต้องการลบข้อมูลทั้งหมดในตารางใช่หรือไม่? (ข้อมูลที่บันทึกไว้จะหายไปทั้งหมด)");
+        if (confirmReset) {
+            // ล้างค่าใน input ทั้งหมดบนหน้าจอ
+            document.querySelectorAll('input').forEach(input => {
+                input.value = "";
+            });
+            // ล้างข้อมูลใน LocalStorage
+            localStorage.removeItem('fruitAppData');
+            // ล้างช่องวิเคราะห์
+            document.getElementById('rawText').value = "";
+            // แจ้งสถานะ
+            document.getElementById('status').innerText = "🗑️ ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว";
+            setTimeout(() => document.getElementById('status').innerText = "", 3000);
+            
+            // ลบแถบไฮไลท์สีเขียว (ถ้ามี)
+            document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
+        }
+    }
+
+    // ฟังก์ชันอื่นๆ (คงเดิม)
+    async function pasteData() {
+        try {
+            const text = await navigator.clipboard.readText();
+            document.getElementById('rawText').value = text;
+        } catch (err) { alert("โปรดอนุญาตสิทธิ์เข้าถึง Clipboard"); }
+    }
+
     function analyzeData() {
         const text = document.getElementById('rawText').value;
         if (!text.trim()) return;
-        let targetL = -1, targetB = -1, finalName = "";
+        let targetL = -1, targetB = -1;
         Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
             BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
-                if (text.includes(item.n)) { targetL = lIdx; targetB = bIdx; finalName = item.n; }
+                if (text.includes(item.n)) { targetL = lIdx; targetB = bIdx; }
             });
         });
-        if (targetL === -1) { alert("❌ ไม่พบชื่อสาขา!"); return; }
-
+        if (targetL === -1) { alert("ไม่พบสาขา!"); return; }
         document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
-        const row = document.getElementById(`row-${targetL}-${targetB}`);
-        row.classList.add('row-active');
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
+        document.getElementById(`row-${targetL}-${targetB}`).classList.add('row-active');
         FRUITS.forEach((_, fIdx) => {
             const regex = new RegExp(`${fIdx + 1}\\.\\s*.*?=\\s*([^\\n\\r]+)`, "i");
             const match = text.match(regex);
-            const input = document.getElementById(`input-${targetL}-${targetB}-${fIdx}`);
-            if (match) {
-                input.value = match[1].trim();
-                input.classList.add('pulse-cell');
-                setTimeout(() => input.classList.remove('pulse-cell'), 1000);
-            }
+            if (match) document.getElementById(`input-${targetL}-${targetB}-${fIdx}`).value = match[1].trim();
         });
-        saveData(); // บันทึกหลังวิเคราะห์
-        document.getElementById('status').innerText = `✅ บันทึก: ${finalName} แล้ว`;
+        saveData();
+        document.getElementById('rawText').value = "";
     }
 
-    // ระบบบันทึกข้อมูลลงเครื่อง (LocalStorage)
     function saveData() {
         const allData = {};
         document.querySelectorAll('input').forEach(input => {
@@ -119,11 +164,6 @@
         }
     }
     window.onload = loadData;
-
-    // ลงทะเบียน Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
-    }
 </script>
 </body>
 </html>
