@@ -130,32 +130,80 @@
     }
 
     // Analyze
-    function analyzeData() {
-        const text = document.getElementById('rawText').value;
-        if (!text.trim()) return;
-        let found = false;
-        Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
-            BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
-                if (text.includes(item.n)) {
-                    found = true;
-                    document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
-                    const row = document.getElementById(`row-${targetL = lIdx}-${targetB = bIdx}`);
-                    row.classList.add('row-active');
-                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    FRUITS.forEach((_, fIdx) => {
-                        const regex = new RegExp(`${fIdx + 1}\\.\\s*.*?=\\s*([^\\n\\r]+)`, "i");
-                        const match = text.match(regex);
-                        if (match) document.getElementById(`input-${lIdx}-${bIdx}-${fIdx}`).value = match[1].trim();
-                    });
-                    saveData();
-                    showStatus(`✅ อัปเดต: ${item.n}`);
+function analyzeData() {
+    let text = document.getElementById('rawText').value;
+    if (!text.trim()) return;
+
+    let targetL = -1, targetB = -1;
+    let foundName = "";
+
+    // 1. เตรียมข้อความให้พร้อม (ทำให้เป็นตัวใหญ่และลบช่องว่างส่วนเกิน)
+    const upperText = text.toUpperCase();
+
+    // 2. ค้นหาสาขา (กวาดหา Keyword ที่มีโอกาสใช่)
+    Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
+        BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
+            const originalName = item.n.toUpperCase();
+            
+            // สร้างกลุ่มคำค้นหาพิเศษ (ดักทางชื่อย่อที่ส่งมาบ่อย)
+            let keywords = [originalName];
+            if (originalName.includes("มาเกิ็ดเพลส")) keywords.push("CMPS", "MARKET PLACE");
+            if (originalName.includes("T21RM3")) keywords.push("C.RM3", "T21", "RM3", "TERMINAL");
+            if (originalName.includes("ONE BANKOK")) keywords.push("ONE BANGKOK", "วัน แบงค็อก");
+            if (originalName.includes("เซ็นทรัล ลาดพร้าว")) keywords.push("ลาดพร้าว", "CENTRAL LADPRAO");
+
+            // ตรวจสอบว่าในข้อความทั้งหมด มีคำไหนตรงกับ Keywords ไหม
+            keywords.forEach(key => {
+                if (upperText.includes(key)) {
+                    targetL = lIdx;
+                    targetB = bIdx;
+                    foundName = item.n;
                 }
             });
         });
-        if (!found) alert("ไม่พบชื่อสาขา!");
-        document.getElementById('rawText').value = "";
+    });
+
+    if (targetL === -1) {
+        alert("❌ ไม่พบสาขา! ตรวจสอบชื่อสาขาในข้อความอีกครั้ง");
+        return;
     }
+
+    // 3. เริ่มวิเคราะห์ข้อมูลผลไม้
+    document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
+    const row = document.getElementById(`row-${targetL}-${targetB}`);
+    row.classList.add('row-active');
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    FRUITS.forEach((_, fIdx) => {
+        // Regex ใหม่: รองรับเลขข้อที่มีอีโมจิแทรก และดึงค่าหลังเครื่องหมาย =
+        // เช่น "1.🍌กล้วย = 12 ห่ามเขียว" -> จะได้ "12 ห่ามเขียว"
+        const regex = new RegExp(`${fIdx + 1}\\.\\s*.*?=\\s*([^\\n\\r]+)`, "u");
+        const match = text.match(regex);
+        
+        const input = document.getElementById(`input-${targetL}-${targetB}-${fIdx}`);
+        if (match) {
+            let val = match[1].trim();
+            
+            // แปลงเครื่องหมายกากบาทเป็น ❌ ให้เหมือนกันทั้งหมด
+            if (val.includes('❌') || val.toLowerCase().includes('(x)') || val.toLowerCase() === 'x') {
+                val = '❌';
+            } else {
+                // ถ้าเป็นตัวเลข ให้พยายามตัดหน่วยภาษาอังกฤษ/ไทยออก (เช่น kg, k, Box)
+                val = val.replace(/kg\.?|k|pc|box|กิโล|ห่ามเขียว|ถุง/gi, "").trim();
+            }
+            
+            input.value = val;
+            input.classList.add('pulse-cell');
+            setTimeout(() => input.classList.remove('pulse-cell'), 1000);
+        } else {
+            // กรณีไม่มีข้อมูลในข้อความ ให้ข้ามไป
+        }
+    });
+
+    saveData();
+    showStatus(`✅ เจอสาขา: ${foundName}`);
+    document.getElementById('rawText').value = ""; 
+}
 
     function showStatus(msg) {
         const s = document.getElementById('status');
