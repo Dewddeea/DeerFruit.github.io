@@ -3,70 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fruit Order App - Reset Function</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2c3e50">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    
+    <title>Fruit Order App V2 - New UI</title>
     <style>
         body { font-family: 'Sarabun', sans-serif; margin: 0; background-color: #f0f2f5; color: #333; padding-bottom: 50px; }
         
-        .sticky-header { position: sticky; top: 0; background: #2c3e50; color: white; padding: 15px 20px; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        /* Header & Action Bar */
+        .sticky-header { position: sticky; top: 0; background: #2c3e50; color: white; padding: 12px 15px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .title { font-size: 1.1rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         
-        .analyzer-container { display: flex; gap: 10px; align-items: stretch; }
-        textarea { flex-grow: 1; height: 100px; padding: 10px; border-radius: 8px; border: none; font-size: 14px; font-family: 'Sarabun', sans-serif; }
-        
-        .button-group { display: flex; flex-direction: column; gap: 8px; }
-        .action-buttons { display: flex; gap: 5px; }
+        /* Grouping Buttons */
+        .main-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .secondary-actions { display: flex; gap: 8px; }
 
-        .btn-analyze { background: #27ae60; color: white; border: none; width: 100px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        .btn-paste { background: #e67e22; color: white; border: none; width: 100px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; padding: 5px; }
-        .btn-print { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-        .btn-reset { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: bold; }
-        
-        .btn-reset:hover { background: #c0392b; }
-        .btn-print:hover { background: #2980b9; }
+        /* Button Styling */
+        button { 
+            border: none; border-radius: 8px; cursor: pointer; 
+            font-family: 'Sarabun', sans-serif; font-weight: bold; 
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+            transition: 0.2s;
+        }
+        button:active { transform: scale(0.95); }
 
-        .content { padding: 20px; }
-        .line-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; }
+        .btn-reset { background: #ff4757; color: white; padding: 6px 12px; font-size: 13px; }
+        .btn-print { background: #2f3542; color: white; padding: 6px 12px; font-size: 13px; border: 1px solid #57606f; }
+        .btn-paste { background: #ffa502; color: white; height: 45px; font-size: 16px; }
+        .btn-analyze { background: #2ed573; color: white; height: 45px; font-size: 16px; }
+
+        /* Input Area */
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        textarea { 
+            width: 100%; box-sizing: border-box; height: 80px; 
+            padding: 12px; border-radius: 8px; border: 2px solid #34495e;
+            background: #ecf0f1; font-size: 14px; resize: none;
+        }
+        textarea:focus { outline: none; border-color: #2ed573; background: white; }
+
+        /* Table & Content */
+        .content { padding: 15px; }
+        .line-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+        h2 { margin: 0 0 15px 0; font-size: 1.2rem; color: #2c3e50; border-left: 5px solid #2ed573; padding-left: 12px; }
         
-        h2 { margin-top: 0; color: #2c3e50; border-left: 6px solid #27ae60; padding-left: 15px; }
         table { border-collapse: collapse; width: 100%; min-width: 1200px; }
-        th, td { border: 1px solid #dfe6e9; text-align: center; padding: 5px; font-size: 13px; }
-        th { background-color: #f8f9fa; vertical-align: middle; height: 120px; }
-        .v-text { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; margin: 0 auto; }
+        th, td { border: 1px solid #edeff1; text-align: center; padding: 8px 4px; }
+        th { background: #f8f9fa; height: 110px; vertical-align: middle; }
+        .v-text { writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: 12px; }
         
-        .branch-col { text-align: left; padding-left: 10px; font-weight: bold; background: #fdfdfd; width: 180px; color: #2980b9; }
-        input { width: 90%; border: 1px solid transparent; background: transparent; text-align: center; font-size: 14px; padding: 5px 0; }
-        input:focus { outline: none; background: #fff; border-bottom: 2px solid #27ae60; }
-        .row-active { background-color: #e8f5e9 !important; outline: 2px solid #27ae60; }
+        .branch-col { text-align: left; padding-left: 10px; font-weight: bold; color: #1e90ff; width: 180px; background: #f9fbff; }
+        input { width: 100%; border: 1px solid transparent; text-align: center; font-size: 14px; padding: 4px 0; background: transparent; }
+        input:focus { background: #fff; border-bottom: 2px solid #2ed573; outline: none; }
+        
+        .row-active { background-color: #e8faf0 !important; outline: 2px solid #2ed573; }
+        #status { font-size: 12px; text-align: center; color: #2ed573; height: 15px; margin-top: 5px; }
 
+        /* Print Mode */
         @media print {
-            .sticky-header, .btn-reset { display: none !important; }
-            .line-card { page-break-after: always; box-shadow: none; border: 1px solid #eee; }
-            @page { size: landscape; }
+            .sticky-header { display: none !important; }
+            .line-card { page-break-after: always; box-shadow: none; border: 1px solid #ccc; margin: 0; }
+            @page { size: landscape; margin: 1cm; }
         }
     </style>
 </head>
 <body>
 
 <div class="sticky-header">
-    <div class="header-top">
-        <div style="font-size: 18px; font-weight: bold;">📊 ระบบลงข้อมูลผลไม้ V2</div>
-        <div class="action-buttons">
-            <button class="btn-reset" onclick="resetAllData()">🗑️ ล้างข้อมูลทั้งหมด</button>
+    <div class="top-bar">
+        <div class="title">🍏 Fruit Order PSK</div>
+        <div class="secondary-actions">
+            <button class="btn-reset" onclick="resetAllData()">🗑️ ล้างตาราง</button>
             <button class="btn-print" onclick="window.print()">🖨️ พิมพ์</button>
         </div>
     </div>
-    <div class="analyzer-container">
-        <textarea id="rawText" placeholder="วางข้อความจาก LINE ที่นี่..."></textarea>
-        <div class="button-group">
-            <button class="btn-paste" onclick="pasteData()">📋 วาง</button>
-            <button class="btn-analyze" onclick="analyzeData()">วิเคราะห์</button>
+    
+    <div class="input-group">
+        <textarea id="rawText" placeholder="วางข้อความออเดอร์จาก LINE ที่นี่..."></textarea>
+        <div class="main-actions">
+            <button class="btn-paste" onclick="pasteData()">📋 วางข้อความ</button>
+            <button class="btn-analyze" onclick="analyzeData()">🚀 วิเคราะห์ข้อมูล</button>
         </div>
     </div>
-    <div id="status" style="margin-top: 10px; font-size: 14px; color: #55efc4; font-weight: bold;"></div>
+    <div id="status"></div>
 </div>
 
 <div class="content" id="table-display"></div>
@@ -80,14 +96,14 @@
     };
     const FRUITS = ["กล้วย", "แตงโม", "ส้ม", "แอปเปิ้ล", "สับปะรด", "แครอท", "ขิง", "ใบมิ้น", "แตงกวา", "เซอรารี่", "เลม่อน", "kale", "บีทรูท"];
 
-    // วาดตาราง
+    // render table
     const display = document.getElementById('table-display');
     Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
         let html = `<div class="line-card"><h2>${line}</h2><table><thead><tr><th>#</th><th>สี</th><th>สาขา</th>`;
         FRUITS.forEach((f, i) => html += `<th><div class="v-text">${i+1}.${f}</div></th>`);
         html += `<th>หมายเหตุ</th></tr></thead><tbody>`;
         BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
-            html += `<tr id="row-${lIdx}-${bIdx}"><td>${bIdx + 1}</td><td>${item.c}</td><td class="branch-col">${item.n}</td>
+            html += `<tr id="row-${lIdx}-${bIdx}"><td>${bIdx + 1}</td><td style="font-size:11px">${item.c}</td><td class="branch-col">${item.n}</td>
                 ${FRUITS.map((_, fIdx) => `<td><input type="text" id="input-${lIdx}-${bIdx}-${fIdx}" oninput="saveData()"></td>`).join('')}
                 <td><input type="text" id="note-${lIdx}-${bIdx}" oninput="saveData()"></td></tr>`;
         });
@@ -95,54 +111,56 @@
         display.innerHTML += html;
     });
 
-    // ฟังก์ชัน Reset ข้อมูลทั้งหมด
+    // Reset All
     function resetAllData() {
-        const confirmReset = confirm("⚠️ คุณต้องการลบข้อมูลทั้งหมดในตารางใช่หรือไม่? (ข้อมูลที่บันทึกไว้จะหายไปทั้งหมด)");
-        if (confirmReset) {
-            // ล้างค่าใน input ทั้งหมดบนหน้าจอ
-            document.querySelectorAll('input').forEach(input => {
-                input.value = "";
-            });
-            // ล้างข้อมูลใน LocalStorage
+        if (confirm("⚠️ ลบข้อมูลทั้งหมดในตาราง?")) {
+            document.querySelectorAll('input').forEach(i => i.value = "");
             localStorage.removeItem('fruitAppData');
-            // ล้างช่องวิเคราะห์
-            document.getElementById('rawText').value = "";
-            // แจ้งสถานะ
-            document.getElementById('status').innerText = "🗑️ ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว";
-            setTimeout(() => document.getElementById('status').innerText = "", 3000);
-            
-            // ลบแถบไฮไลท์สีเขียว (ถ้ามี)
-            document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
+            showStatus("🗑️ ล้างข้อมูลเรียบร้อย");
         }
     }
 
-    // ฟังก์ชันอื่นๆ (คงเดิม)
+    // Paste
     async function pasteData() {
         try {
             const text = await navigator.clipboard.readText();
             document.getElementById('rawText').value = text;
-        } catch (err) { alert("โปรดอนุญาตสิทธิ์เข้าถึง Clipboard"); }
+            showStatus("📋 วางข้อมูลแล้ว");
+        } catch (err) { alert("โปรดกดวางเอง หรืออนุญาตสิทธิ์ Clipboard"); }
     }
 
+    // Analyze
     function analyzeData() {
         const text = document.getElementById('rawText').value;
         if (!text.trim()) return;
-        let targetL = -1, targetB = -1;
+        let found = false;
         Object.keys(BRANCHES_BY_LINE).forEach((line, lIdx) => {
             BRANCHES_BY_LINE[line].forEach((item, bIdx) => {
-                if (text.includes(item.n)) { targetL = lIdx; targetB = bIdx; }
+                if (text.includes(item.n)) {
+                    found = true;
+                    document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
+                    const row = document.getElementById(`row-${targetL = lIdx}-${targetB = bIdx}`);
+                    row.classList.add('row-active');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    FRUITS.forEach((_, fIdx) => {
+                        const regex = new RegExp(`${fIdx + 1}\\.\\s*.*?=\\s*([^\\n\\r]+)`, "i");
+                        const match = text.match(regex);
+                        if (match) document.getElementById(`input-${lIdx}-${bIdx}-${fIdx}`).value = match[1].trim();
+                    });
+                    saveData();
+                    showStatus(`✅ อัปเดต: ${item.n}`);
+                }
             });
         });
-        if (targetL === -1) { alert("ไม่พบสาขา!"); return; }
-        document.querySelectorAll('tr').forEach(r => r.classList.remove('row-active'));
-        document.getElementById(`row-${targetL}-${targetB}`).classList.add('row-active');
-        FRUITS.forEach((_, fIdx) => {
-            const regex = new RegExp(`${fIdx + 1}\\.\\s*.*?=\\s*([^\\n\\r]+)`, "i");
-            const match = text.match(regex);
-            if (match) document.getElementById(`input-${targetL}-${targetB}-${fIdx}`).value = match[1].trim();
-        });
-        saveData();
+        if (!found) alert("ไม่พบชื่อสาขา!");
         document.getElementById('rawText').value = "";
+    }
+
+    function showStatus(msg) {
+        const s = document.getElementById('status');
+        s.innerText = msg;
+        setTimeout(() => s.innerText = "", 3000);
     }
 
     function saveData() {
